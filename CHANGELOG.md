@@ -1,5 +1,7 @@
-## [Unreleased]
+## 0.1.0
 
-## [0.1.0] - 2024-12-06
+API Client for use with Amplify Syndication API
 
-- Initial release
+#### Includes API endpoints for
+- property 
+- media
