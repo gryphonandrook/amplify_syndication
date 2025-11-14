@@ -25,7 +25,7 @@ module AmplifySyndication
         break if batch.empty?
 
         fields.concat(batch)
-        
+
         offset += batch_size
 
         # Safety sleep between API calls
@@ -129,7 +129,7 @@ module AmplifySyndication
       fields: ["ModificationTimestamp", "ListingKey"],
       filter: nil,
       sleep_seconds: 10,
-      checkpoint: { last_timestamp: "1970-01-01T00:00:00Z", last_key: 0 },
+      checkpoint: { last_timestamp: "1970-01-01T00:00:00Z", last_key: 0 }
     )
       puts "Starting initial download..."
       all_records = [] # Array to collect all records
