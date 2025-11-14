@@ -9,6 +9,89 @@ module AmplifySyndication
       @client.get("$metadata?$format=json")
     end
 
+    # Fetch property fields
+    def fetch_property_fields(batch_size: 50, sleep_seconds: 10)
+      offset = 0
+      fields = []
+
+      loop do
+        query_options = {
+          "$filter" => "ResourceName eq 'Property'",
+          "$top" => batch_size,
+          "$skip" => offset
+        }.compact
+        response = fetch_with_options("Field", query_options)
+        batch = response["value"]
+        break if batch.empty?
+
+        fields.concat(batch)
+        
+        offset += batch_size
+
+        # Safety sleep between API calls
+        sleep(sleep_seconds) if sleep_seconds.positive?
+      end
+
+      fields
+    end
+
+    def fetch_all_lookups(batch_size: 50, sleep_seconds: 10, filter: nil)
+      offset = 0
+      values = []
+
+      loop do
+        query_options = {
+          "$top"  => batch_size,
+          "$skip" => offset
+        }
+    
+        # Apply filter only when provided
+        if filter.present?
+          combined_filter =
+            filter.is_a?(Array) ? filter.join(" and ") : filter
+          query_options["$filter"] = combined_filter
+        end
+
+        response = fetch_with_options("Lookup", query_options)
+        batch = response["value"] || []
+        break if batch.empty?
+
+        values.concat(batch)
+
+        offset += batch_size
+
+        # Safety sleep between API calls
+        sleep(sleep_seconds) if sleep_seconds.positive?
+      end
+
+      values
+    end
+
+    # get lookup name values
+    def lookup(lookup_name, batch_size: 50, sleep_seconds: 10)
+      offset = 0
+      values = []
+
+      loop do
+        query_options = {
+          "$filter" => "LookupName eq '#{lookup_name}'",
+          "$top" => batch_size,
+          "$skip" => offset
+        }.compact
+        response = fetch_with_options("Lookup", query_options)
+        batch = response["value"]
+        break if batch.empty?
+
+        values.concat(batch)
+        offset += batch_size
+
+        # Safety sleep between API calls
+        sleep(sleep_seconds) if sleep_seconds.positive?
+      end
+
+      values
+    end
+
     # Fetch basic property data
     def fetch_property_data(limit = 1)
       @client.get("Property", "$top" => limit)
@@ -45,7 +128,8 @@ module AmplifySyndication
       batch_size: 100,
       fields: ["ModificationTimestamp", "ListingKey"],
       filter: nil,
-      checkpoint: { last_timestamp: "1970-01-01T00:00:00Z", last_key: 0 }
+      sleep_seconds: 10,
+      checkpoint: { last_timestamp: "1970-01-01T00:00:00Z", last_key: 0 },
     )
       puts "Starting initial download..."
       all_records = [] # Array to collect all records
@@ -86,6 +170,9 @@ module AmplifySyndication
 
         # Stop if the number of records is less than the batch size
         break if records.size < batch_size
+
+        # Safety sleep between API calls
+        sleep(sleep_seconds) if sleep_seconds.positive?
       end
 
       puts "Initial download complete."
