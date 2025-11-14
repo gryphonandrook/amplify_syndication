@@ -153,6 +153,24 @@ puts recent_media
 
 ---
 
+## Lookups
+
+### Fetch all lookups (simple)
+
+Fetch the entire `Lookup` table into memory:
+
+```ruby
+api = AmplifySyndication::API.new
+
+lookups = api.fetch_all_lookups(
+  batch_size: 100,
+  sleep_seconds: 2 # optional throttle between API calls
+)
+
+puts "Loaded #{lookups.size} lookup rows"
+
+---
+
 ## Error Handling
 
 If an API call fails, the gem raises a StandardError with details of the HTTP response:
