@@ -338,5 +338,50 @@ module AmplifySyndication
 
       fetch_with_options("Media", query_options)
     end
+
+    def fetch_media_batch(listing_key:, skip:, top: 100)
+      query_options = {
+        "$filter"  => "ResourceName eq 'Property' and ResourceRecordKey eq '#{listing_key}'",
+        "$orderby" => "Order asc, MediaKey",
+        "$top"     => top,
+        "$skip"    => skip
+      }
+
+      response = fetch_with_options("Media", query_options)
+      response["value"] || []
+    end
+
+    def each_media_batch(listing_key:, batch_size: 100, sleep_seconds: 1)
+      skip = 0
+
+      loop do
+        batch = fetch_media_batch(
+          listing_key: listing_key,
+          skip: skip,
+          top: batch_size
+        )
+
+        break if batch.empty?
+        yield(batch) if block_given?
+
+        skip += batch_size
+        sleep(sleep_seconds) if sleep_seconds.positive?
+      end
+    end
+
+    def fetch_all_media_for_listing(listing_key, batch_size: 100, sleep_seconds: 1)
+      results = []
+
+      each_media_batch(
+        listing_key: listing_key,
+        batch_size: batch_size,
+        sleep_seconds: sleep_seconds
+      ) do |batch|
+        results.concat(batch)
+      end
+
+      results
+    end
+
   end
 end
