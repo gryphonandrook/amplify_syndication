@@ -326,62 +326,32 @@ module AmplifySyndication
       fetch_with_options("Media", query_options)
     end
 
-    # Fetch media by ResourceName and ResourceRecordKey
-    def fetch_media_by_resource(resource_name, resource_key, batch_size = 100)
-      filter = "ResourceRecordKey eq '#{resource_key}' and ResourceName eq '#{resource_name}'"
+    def fetch_all_media_for_resource(resource_name, resource_key, batch_size: 100, sleep_seconds: 1)
+      filter = "(ResourceRecordKey eq '#{resource_key}' and ResourceName eq '#{resource_name}')"
 
-      query_options = {
-        "$filter"  => filter,
-        "$orderby" => "ModificationTimestamp,MediaKey",
-        "$top"     => batch_size
-      }
-
-      fetch_with_options("Media", query_options)
-    end
-
-    def fetch_media_batch(listing_key:, skip:, top: 100)
-      query_options = {
-        "$filter"  => "ResourceName eq 'Property' and ResourceRecordKey eq '#{listing_key}'",
-        "$orderby" => "Order asc, MediaKey",
-        "$top"     => top,
-        "$skip"    => skip
-      }
-
-      response = fetch_with_options("Media", query_options)
-      response["value"] || []
-    end
-
-    def each_media_batch(listing_key:, batch_size: 100, sleep_seconds: 1)
+      results = []
       skip = 0
 
       loop do
-        batch = fetch_media_batch(
-          listing_key: listing_key,
-          skip: skip,
-          top: batch_size
-        )
+        query_options = {
+          "$filter" => filter,
+          "$orderby" => "ModificationTimestamp,MediaKey",
+          "$top"     => batch_size,
+          "$skip"    => skip
+        }
 
+        response = fetch_with_options("Media", query_options)
+        batch = response["value"] || []
         break if batch.empty?
-        yield(batch) if block_given?
 
-        skip += batch_size
-        sleep(sleep_seconds) if sleep_seconds.positive?
-      end
-    end
-
-    def fetch_all_media_for_listing(listing_key, batch_size: 100, sleep_seconds: 1)
-      results = []
-
-      each_media_batch(
-        listing_key: listing_key,
-        batch_size: batch_size,
-        sleep_seconds: sleep_seconds
-      ) do |batch|
         results.concat(batch)
+
+        break if batch.size < batch_size
+        skip += batch_size
+        sleep(sleep_seconds)
       end
 
       results
     end
-
   end
 end

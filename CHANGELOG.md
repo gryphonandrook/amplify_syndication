@@ -1,3 +1,16 @@
+## 0.3.2 (2025-11-19)
+
+### Improved
+- Internal request logging now clearly displays the final AMPRE request path for easier debugging.
+- Media filter logic now mirrors the stable pattern used in Property replication filters.
+
+### Fixed
+- Corrected Media API $filter construction to comply with AMPRE OData requirements.
+- Removed incorrect manual URI-encoding that caused 400 The URI is malformed errors.
+- Resolved issues where HTTPClient encoding differed from curl behavior, ensuring valid query formation.
+- Restored full pagination functionality for media fetching via:
+  - `fetch_all_media_for_resource`
+
 ## 0.3.1 (2025-11-18)
 
 ### Added
