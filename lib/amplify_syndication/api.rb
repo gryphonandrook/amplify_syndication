@@ -170,23 +170,24 @@ module AmplifySyndication
       batch_size: 100,
       fields: ["ModificationTimestamp", "ListingKey"],
       filter: nil,
-      checkpoint: { last_timestamp: "1970-01-01T00:00:00Z", last_key: 0 }
+      checkpoint: { last_timestamp: "1970-01-01T00:00:00Z", last_key: "0" }
     )
-      encoded_ts = URI.encode_www_form_component(checkpoint[:last_timestamp])
+      last_timestamp = checkpoint[:last_timestamp].to_s
+      last_key       = checkpoint[:last_key].to_s.gsub("'", "''")
 
-      # checkpoint filter: everything strictly after the last (timestamp, key) pair
-      checkpoint_filter = "(ModificationTimestamp gt #{encoded_ts}) " \
-                          "or (ModificationTimestamp eq #{encoded_ts} and ListingKey gt '#{checkpoint[:last_key]}')"
+      checkpoint_filter =
+        "(ModificationTimestamp gt #{last_timestamp}) " \
+        "or (ModificationTimestamp eq #{last_timestamp} and ListingKey gt '#{last_key}')"
 
       conditions = []
-      conditions << "(#{filter})" if filter
+      conditions << "(#{filter})" if filter && !filter.empty?
       conditions << "(#{checkpoint_filter})"
 
       query_options = {
-        "$select" => fields.join(","),
-        "$filter" => conditions.join(" and "),
+        "$select"  => fields.join(","),
+        "$filter"  => conditions.join(" and "),
         "$orderby" => "ModificationTimestamp,ListingKey",
-        "$top" => batch_size
+        "$top"     => batch_size
       }
 
       response = fetch_with_options(resource, query_options)
@@ -202,7 +203,7 @@ module AmplifySyndication
       fields: ["ModificationTimestamp", "ListingKey"],
       filter: nil,
       sleep_seconds: 10,
-      checkpoint: { last_timestamp: "1970-01-01T00:00:00Z", last_key: 0 }
+      checkpoint: { last_timestamp: "1970-01-01T00:00:00Z", last_key: "0" }
     )
       loop do
         batch = fetch_initial_download_batch(
@@ -238,7 +239,7 @@ module AmplifySyndication
       fields: ["ModificationTimestamp", "ListingKey"],
       filter: nil,
       sleep_seconds: 10,
-      checkpoint: { last_timestamp: "1970-01-01T00:00:00Z", last_key: 0 }
+      checkpoint: { last_timestamp: "1970-01-01T00:00:00Z", last_key: "0" }
     )
       results = []
 
@@ -268,7 +269,7 @@ module AmplifySyndication
       batch_size: 100,
       fields: ["ModificationTimestamp", "ListingKey"],
       filter: nil,
-      checkpoint: { last_timestamp: "1970-01-01T00:00:00Z", last_key: 0 },
+      checkpoint: { last_timestamp: "1970-01-01T00:00:00Z", last_key: "0" },
       sleep_seconds: 10
     )
       if block_given?

@@ -16,23 +16,25 @@ module AmplifySyndication
         "Authorization" => "Bearer #{@access_token}",
         "Accept" => "application/json"
       }
+
       response = @http_client.get(url, params, headers)
       parse_response(response)
     end
 
     def get_with_options(endpoint, options = {})
-      query_string = options.map { |key, value| "#{key}=#{value}" }.join("&")
+      query_string = build_query_string(options)
       get("#{endpoint}?#{query_string}")
     end
 
     private
 
-    # Converts a hash of query options into a URL-encoded query string
     def build_query_string(options)
-      URI.encode_www_form(options)
+      options.map do |key, value|
+        escaped_value = URI::DEFAULT_PARSER.escape(value.to_s)
+        "#{key}=#{escaped_value}"
+      end.join("&")
     end
 
-    # Parses JSON response, raises an error for non-200 responses
     def parse_response(response)
       if response.status == 200
         JSON.parse(response.body)
